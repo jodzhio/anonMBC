@@ -1,36 +1,36 @@
-import { serializer } from "./utlis";
-
-function sendingMessage(event) {
+document.getElementById('contactForm').addEventListener('submit', async (event) => {
   event.preventDefault();
-
-  const data = serializer(message);
-
-  const hasData = data.some(item => item.value.trim() !== '');
-  if (!hasData) {
-    console.log("Нет данных для отправки");
-    return;
+  const messageText = document.getElementById('message').value;
+  const file1 = document.getElementById('fileInput1').files[0];
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
   }
 
-  fetch('http://test.ru/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Не удалось отправить');
-      }
-      return response.json();
-    })
-    .then(result => {
-      console.log('Сообщение успешно отправлено:', result);
-    })
-    .catch(error => {
-      console.error('Ошибка при отправке сообщения:', error);
+  try {
+    const [file1Data, file2Data] = await Promise.all([
+      readFileAsDataURL(file1)
+    ]);
+    const payload = {
+      text: messageText,
+      file: file1Data
+    };
+    const response = await fetch('http://127.0.0.1:8000/lol', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-}
-
-const message = document.getElementById('contactForm');
-message.addEventListener('submit', sendingMessage);
+    const result = await response.json();
+    console.log('Успех:', result);
+  } catch (error) {
+    console.error('Ошибка:', error);
+  }
+});
